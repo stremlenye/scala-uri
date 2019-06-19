@@ -9,6 +9,7 @@ import scala.collection.immutable
 import scala.util.Try
 
 sealed trait Host extends PublicSuffixSupport {
+  def conf: UriConfig
   def value: String
   override def toString: String = value
 
@@ -83,7 +84,7 @@ object Host {
     Some(host.toString)
 }
 
-final case class DomainName(value: String) extends Host with PublicSuffixSupportImpl with PunycodeSupport {
+final case class DomainName(value: String)(implicit val conf: UriConfig = UriConfig.default) extends Host with PublicSuffixSupportImpl with PunycodeSupport {
 
   /**
     * @return the domain name in ASCII Compatible Encoding (ACE), as defined by the ToASCII
@@ -186,7 +187,7 @@ object DomainName {
   def empty: DomainName = DomainName("")
 }
 
-final case class IpV4(octet1: Byte, octet2: Byte, octet3: Byte, octet4: Byte) extends Host {
+final case class IpV4(octet1: Byte, octet2: Byte, octet3: Byte, octet4: Byte)(implicit val conf: UriConfig = UriConfig.default) extends Host {
 
   private def uByteToInt(b: Byte): Int = b & 0xff
 
@@ -228,7 +229,8 @@ object IpV4 {
 }
 
 final case class IpV6(piece1: Char, piece2: Char, piece3: Char, piece4: Char,
-                piece5: Char, piece6: Char, piece7: Char, piece8: Char) extends Host {
+                piece5: Char, piece6: Char, piece7: Char, piece8: Char)
+                (implicit val conf: UriConfig = UriConfig.default) extends Host {
 
   def piece1Int: Int = piece1.toInt
   def piece2Int: Int = piece2.toInt
