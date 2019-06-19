@@ -1,19 +1,26 @@
 package io.lemonlabs.uri.json
 
+import io.circe.Decoder.Result
 import io.circe._
 import io.circe.parser._
 import io.lemonlabs.uri.UriException
 import io.lemonlabs.uri.inet.Trie
+import cats.syntax.either._
 
 case object CirceSupport extends JsonSupport {
 
-  implicit val charKeyDecoder: KeyDecoder[Char] = (key: String) => key.headOption
+  implicit val charKeyDecoder: KeyDecoder[Char] = new KeyDecoder[Char] {
+    def apply(key: String): Option[Char] = key.headOption
+  }
 
-  implicit val trieDecoder: Decoder[Trie] = (c: HCursor) => for {
-    children <- c.downField("c").as[Map[Char, Trie]]
-    wordEnd <- c.downField("e").as[Boolean]
-  } yield {
-    new Trie(children, wordEnd)
+  implicit val trieDecoder: Decoder[Trie] = new Decoder[Trie] {
+    def apply(c: HCursor): Result[Trie] =
+      for {
+        children <- c.downField("c").as[Map[Char, Trie]]
+        wordEnd <- c.downField("e").as[Boolean]
+      } yield {
+        new Trie(children, wordEnd)
+      }
   }
 
   override def publicSuffixTrie: Trie =
