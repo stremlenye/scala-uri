@@ -19,7 +19,7 @@ val sharedSettings = Seq(
 
 val jvmSettings = Seq(
   libraryDependencies ++= Seq(
-    "io.circe" %% "circe-parser"  % "0.10.0" % Optional,
+    "io.circe" %% "circe-parser"  % "0.12.0-M3" % Optional,
     "io.spray" %% "spray-json"    % "1.3.5" % Optional
   )
 )
