@@ -1,6 +1,6 @@
 package io.lemonlabs.uri
 
-import io.lemonlabs.uri.config.{ExcludeNones, UriConfig}
+import io.lemonlabs.uri.config.{ExcludeNones, UriEncoderConfig}
 import io.lemonlabs.uri.typesafe._
 import org.scalatest.{FlatSpec, Matchers}
 import shapeless._
@@ -109,11 +109,11 @@ class TypesafeDslTypeTests extends FlatSpec with Matchers {
     uriWithoutB.toString should equal("/uris-in-scala.html?a=1&b")
 
     {
-      implicit val config: UriConfig = UriConfig(renderQuery = ExcludeNones)
+      implicit val config: UriEncoderConfig = UriEncoderConfig(renderQuery = ExcludeNones)
       val uriWithBexludingNones = "/uris-in-scala.html" withParams Foo(a = 1, b = Some("bar"))
       val uriWithoutBexludingNones = "/uris-in-scala.html" withParams Foo(a = 1, b = None)
-      uriWithBexludingNones.toString should equal("/uris-in-scala.html?a=1&b=bar")
-      uriWithoutBexludingNones.toString should equal("/uris-in-scala.html?a=1")
+      uriWithBexludingNones.render should equal("/uris-in-scala.html?a=1&b=bar")
+      uriWithoutBexludingNones.render should equal("/uris-in-scala.html?a=1")
     }
   }
 

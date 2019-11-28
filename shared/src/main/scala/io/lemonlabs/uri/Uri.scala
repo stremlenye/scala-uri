@@ -4,7 +4,7 @@ import java.util.Base64
 
 import cats.implicits._
 import cats.{Eq, Order, Show}
-import io.lemonlabs.uri.config.UriConfig
+import io.lemonlabs.uri.config.{UriConfig, UriEncoderConfig}
 import io.lemonlabs.uri.parsing.{UriParser, UrlParser, UrnParser}
 
 import scala.util.Try
@@ -57,20 +57,19 @@ sealed trait Uri extends Product with Serializable {
     *
     * @return a `java.net.URI` matching this `io.lemonlabs.uri.Uri`
     */
-  def toJavaURI: java.net.URI =
-    new java.net.URI(toString(config))
+  def toJavaURI(implicit config: UriEncoderConfig): java.net.URI =
+    new java.net.URI(render(config))
 
   /**
     * Returns the path with no encoders taking place (e.g. non ASCII characters will not be percent encoded)
     * @return String containing the raw path for this Uri
     */
-  def toStringRaw: String =
-    toString(config.withNoEncoding)
+  def toStringRaw(implicit config: UriEncoderConfig): String =
+    render(config.withNoEncoding)
 
-  override def toString: String =
-    toString(config)
+  override def toString: String = render(io.lemonlabs.uri.config.encoder.default)
 
-  private[uri] def toString(config: UriConfig): String
+  def render(implicit config: UriEncoderConfig): String
 }
 
 object Uri {
@@ -498,7 +497,7 @@ sealed trait Url extends Uri {
   def filterQueryValues(f: String => Boolean): Self =
     withQueryString(query.filterValues(f))
 
-  private[uri] def fragmentToString(c: UriConfig): String =
+  private[uri] def fragmentToString(c: UriEncoderConfig): String =
     fragment.map(f => "#" + c.fragmentEncoder.encode(f, c.charset)).getOrElse("")
 
   def toAbsoluteUrl: AbsoluteUrl = this match {
@@ -525,11 +524,11 @@ sealed trait Url extends Uri {
     *         returned in ASCII Compatible Encoding (ACE), as defined by the ToASCII operation of
     *         <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>.
     */
-  def toStringPunycode: String =
-    toString(config)
+  def toStringPunycode(implicit config: UriEncoderConfig): String =
+    render(config)
 
-  protected def queryToString(config: UriConfig): String =
-    query.toString(config) match {
+  protected def queryToString(config: UriEncoderConfig): String =
+    query.render(config) match {
       case "" => ""
       case s  => "?" + s
     }
@@ -633,8 +632,8 @@ final case class RelativeUrl(path: UrlPath, query: QueryString, fragment: Option
   def withQueryString(query: QueryString): RelativeUrl =
     copy(query = query)
 
-  private[uri] def toString(c: UriConfig): String =
-    path.toString(c) + queryToString(c) + fragmentToString(c)
+  def render(implicit config: UriEncoderConfig): String =
+    path.render(config) + queryToString(config) + fragmentToString(config)
 }
 
 object RelativeUrl {
@@ -772,13 +771,13 @@ sealed trait UrlWithAuthority extends Url {
     *         returned in ASCII Compatible Encoding (ACE), as defined by the ToASCII operation of
     *         <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>.
     */
-  override def toStringPunycode: String =
-    toString(config, _.toStringPunycode)
+  override def toStringPunycode(implicit config: UriEncoderConfig): String =
+    renderWithHost(config, _.toStringPunycode)
 
-  private[uri] def toString(c: UriConfig): String =
-    toString(c, _.toString)
+  def render(implicit config: UriEncoderConfig): String =
+    renderWithHost(config, _.toString)
 
-  private[uri] def toString(c: UriConfig, hostToString: Host => String): String
+  private[uri] def renderWithHost(config: UriEncoderConfig, hostToString: Host => String): String
 }
 
 object UrlWithAuthority {
@@ -838,8 +837,10 @@ final case class ProtocolRelativeUrl(authority: Authority,
   def withQueryString(query: QueryString): ProtocolRelativeUrl =
     copy(query = query)
 
-  private[uri] def toString(c: UriConfig, hostToString: Host => String): String =
-    "//" + authority.toString(c, hostToString) + path.toString(c) + queryToString(c) + fragmentToString(c)
+  private[uri] def renderWithHost(config: UriEncoderConfig, hostToString: Host => String): String =
+    "//" + authority.render(config, hostToString) + path.render(config) + queryToString(config) + fragmentToString(
+      config
+    )
 }
 
 object ProtocolRelativeUrl {
@@ -899,8 +900,10 @@ final case class AbsoluteUrl(scheme: String,
   def withQueryString(query: QueryString): AbsoluteUrl =
     copy(query = query)
 
-  private[uri] def toString(c: UriConfig, hostToString: Host => String): String =
-    scheme + "://" + authority.toString(c, hostToString) + path.toString(c) + queryToString(c) + fragmentToString(c)
+  private[uri] def renderWithHost(config: UriEncoderConfig, hostToString: Host => String): String =
+    scheme + "://" + authority.render(config, hostToString) + path.render(config) + queryToString(config) + fragmentToString(
+      config
+    )
 }
 
 object AbsoluteUrl {
@@ -1017,8 +1020,8 @@ final case class SimpleUrlWithoutAuthority(scheme: String, path: UrlPath, query:
   def withQueryString(query: QueryString): SimpleUrlWithoutAuthority =
     copy(query = query)
 
-  private[uri] def toString(c: UriConfig): String =
-    scheme + ":" + path.toString(c) + queryToString(c) + fragmentToString(c)
+  def render(implicit config: UriEncoderConfig): String =
+    scheme + ":" + path.render(config) + queryToString(config) + fragmentToString(config)
 }
 
 object SimpleUrlWithoutAuthority {
@@ -1054,7 +1057,7 @@ final case class DataUrl(mediaType: MediaType, base64: Boolean, data: Array[Byte
 
   def query: QueryString = QueryString.empty
   def fragment: Option[String] = None
-  def path: UrlPath = RootlessPath.fromParts(pathString(config.withNoEncoding))
+  def path: UrlPath = RootlessPath.fromParts(pathString(io.lemonlabs.uri.config.encoder.noopEncoding))
 
   /**
     * @return The data from this data URL using the charset provided by the URL's mediatype
@@ -1062,7 +1065,7 @@ final case class DataUrl(mediaType: MediaType, base64: Boolean, data: Array[Byte
   def dataAsString: String =
     new String(data, mediaType.charset)
 
-  protected def pathString(c: UriConfig): String = {
+  protected def pathString(c: UriEncoderConfig): String = {
     val base64Str = if (base64) ";base64" else ""
     val dataStr =
       if (base64) {
@@ -1116,8 +1119,8 @@ final case class DataUrl(mediaType: MediaType, base64: Boolean, data: Array[Byte
   def withQueryString(query: QueryString): DataUrl =
     this
 
-  private[uri] def toString(c: UriConfig): String =
-    scheme + ":" + pathString(c)
+  override def render(implicit config: UriEncoderConfig): String =
+    scheme + ":" + pathString(config)
 }
 
 object DataUrl {
@@ -1174,8 +1177,8 @@ final case class Urn(path: UrnPath)(implicit val config: UriConfig = UriConfig.d
   def toUrl: Url = throw new UriConversionException("Urn cannot be converted to Url")
   def toUrn: Urn = this
 
-  private[uri] def toString(c: UriConfig): String =
-    scheme + ":" + path.toString(c)
+  def render(implicit config: UriEncoderConfig): String =
+    scheme + ":" + path.render(config)
 }
 
 object Urn {

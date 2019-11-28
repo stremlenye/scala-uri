@@ -3,6 +3,7 @@ package io.lemonlabs.uri
 import org.scalatest.{FlatSpec, Matchers}
 import io.lemonlabs.uri.decoding.{NoopDecoder, UriDecodeException}
 import io.lemonlabs.uri.config.UriConfig
+import io.lemonlabs.uri.config.encoder.default
 
 class DecodingTests extends FlatSpec with Matchers {
   "Reserved characters" should "be percent decoded during parsing" in {

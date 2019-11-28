@@ -1,8 +1,9 @@
 package io.lemonlabs.uri
 
-import io.lemonlabs.uri.config.UriConfig
+import io.lemonlabs.uri.config.{UriConfig, UriEncoderConfig}
 import io.lemonlabs.uri.encoding.PercentEncoder
 import org.scalatest.{FlatSpec, Matchers}
+import io.lemonlabs.uri.config.encoder.default
 
 class DataUrlTests extends FlatSpec with Matchers {
   "Authority, querystring, fragment" should "be empty" in {
@@ -47,14 +48,14 @@ class DataUrlTests extends FlatSpec with Matchers {
   "Base64 encoded data" should "be percent decoded" in {
     val dataUrl = DataUrl.parse("data:text/plain;base64,SGVsbG8sIFdvcmxkIQ%3D%3D")
     dataUrl.dataAsString should equal("Hello, World!")
-    dataUrl.toString() should equal("data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==")
+    dataUrl.render should equal("data:text/plain;base64,SGVsbG8sIFdvcmxkIQ==")
   }
 
   it should "have '=' padding chars percent encoded when configured to" in {
-    implicit val c = UriConfig(encoder = PercentEncoder() ++ '=')
+    val c = UriEncoderConfig(encoder = PercentEncoder() ++ '=')
     val dataUrl = DataUrl.parse("data:text/plain;base64,SGVsbG8sIFdvcmxkIQ%3D%3D")
     dataUrl.dataAsString should equal("Hello, World!")
-    dataUrl.toString() should equal("data:text/plain;base64,SGVsbG8sIFdvcmxkIQ%3D%3D")
+    dataUrl.render(c) should equal("data:text/plain;base64,SGVsbG8sIFdvcmxkIQ%3D%3D")
   }
 
   /**
@@ -63,7 +64,7 @@ class DataUrlTests extends FlatSpec with Matchers {
   "Percent Encoded data" should "be decoded and encoded by default" in {
     val dataUrl = DataUrl.parse("data:text/html,%3Ch1%3EHello%2C%20World!%3C%2Fh1%3E")
     dataUrl.dataAsString should equal("<h1>Hello, World!</h1>")
-    dataUrl.toString() should equal("data:text/html,%3Ch1%3EHello,%20World!%3C%2Fh1%3E")
+    dataUrl.render should equal("data:text/html,%3Ch1%3EHello,%20World!%3C%2Fh1%3E")
   }
 
   /**
@@ -74,7 +75,7 @@ class DataUrlTests extends FlatSpec with Matchers {
     dataUrl shouldBe a[DataUrl]
     dataUrl.schemeOption should equal(Some("data"))
     dataUrl.path.toStringRaw should equal(",Hello, World!")
-    dataUrl.path.toString() should equal(",Hello,%20World!")
+    dataUrl.path.render should equal(",Hello,%20World!")
   }
 
   /**
@@ -105,7 +106,7 @@ class DataUrlTests extends FlatSpec with Matchers {
     val dataUrl = DataUrl.parse("data:,A%20brief%20note")
     val mailto = dataUrl.withScheme("mailto")
     mailto shouldBe a[SimpleUrlWithoutAuthority]
-    mailto.toString() should equal("mailto:,A%20brief%20note")
+    mailto.render should equal("mailto:,A%20brief%20note")
   }
 
   it should "return a DataUrl if the scheme is data" in {
@@ -130,14 +131,14 @@ class DataUrlTests extends FlatSpec with Matchers {
     val dataUrl = DataUrl.parse("data:,A%20brief%20note")
     val absoluteUrl = dataUrl.withHost(DomainName("example.com"))
     absoluteUrl shouldBe an[AbsoluteUrl]
-    absoluteUrl.toString() should equal("data://example.com/,A%20brief%20note")
+    absoluteUrl.render should equal("data://example.com/,A%20brief%20note")
   }
 
   "Changing Port" should "return an AbsoluteUrl" in {
     val dataUrl = DataUrl.parse("data:,A%20brief%20note")
     val absoluteUrl = dataUrl.withPort(8080)
     absoluteUrl shouldBe an[AbsoluteUrl]
-    absoluteUrl.toString() should equal("data://:8080/,A%20brief%20note")
+    absoluteUrl.render should equal("data://:8080/,A%20brief%20note")
   }
 
   "Changing Authority" should "return an AbsoluteUrl" in {
@@ -145,6 +146,6 @@ class DataUrlTests extends FlatSpec with Matchers {
     val dataUrl = DataUrl.parse("data:,A%20brief%20note")
     val absoluteUrl = dataUrl.withAuthority(Authority("example.com", 8080))
     absoluteUrl shouldBe an[AbsoluteUrl]
-    absoluteUrl.toString() should equal("data://example.com:8080/,A%20brief%20note")
+    absoluteUrl.render should equal("data://example.com:8080/,A%20brief%20note")
   }
 }

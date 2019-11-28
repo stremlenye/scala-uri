@@ -22,12 +22,9 @@ class GithubIssuesTests extends FlatSpec with Matchers with OptionValues {
   }
 
   it should "leave invalid percent encoded entities as-is when ignoreInvalidPercentEncoding=true" in {
-    implicit val c = UriConfig(
-      encoder = NoopEncoder,
-      decoder = PercentDecoder(ignoreInvalidPercentEncoding = true)
-    )
+    implicit val c = UriConfig(decoder = PercentDecoder(ignoreInvalidPercentEncoding = true))
     Vector("/?x=%3", "/%3", "/?a=%3&b=whatever", "/?%3=okay").foreach { part =>
-      Url.parse(part).toString shouldBe part
+      Url.parse(part).render(config.encoder.noopEncoding) shouldBe part
     }
   }
 
@@ -46,6 +43,6 @@ class GithubIssuesTests extends FlatSpec with Matchers with OptionValues {
       decoder = PercentDecoder(ignoreInvalidPercentEncoding = true)
     )
     val url = Url.parse("http://example.com/path%20with%20space")
-    url.toString should equal("http://example.com/path%20with%20space")
+    url.render(config.encoder.default) should equal("http://example.com/path%20with%20space")
   }
 }

@@ -2,7 +2,7 @@ package io.lemonlabs.uri
 
 import cats.implicits._
 import cats.{Eq, Order, Show}
-import io.lemonlabs.uri.config.{All, ExcludeNones, UriConfig}
+import io.lemonlabs.uri.config.{All, ExcludeNones, UriConfig, UriEncoderConfig}
 import io.lemonlabs.uri.parsing.UrlParser
 
 import scala.util.Try
@@ -265,7 +265,7 @@ case class QueryString(params: Vector[(String, Option[String])])(implicit config
 
   type ParamToString = PartialFunction[(String, Option[String]), String]
 
-  private[uri] def toString(c: UriConfig): String = {
+  private[uri] def render(c: UriEncoderConfig): String = {
     val enc = c.queryEncoder
     val charset = c.charset
 
@@ -289,11 +289,10 @@ case class QueryString(params: Vector[(String, Option[String])])(implicit config
     * Returns the query string with no encoding taking place (e.g. non ASCII characters will not be percent encoded)
     * @return String containing the raw query string for this Uri
     */
-  def toStringRaw: String =
-    toString(config.withNoEncoding)
+  def toStringRaw(implicit config: UriEncoderConfig): String =
+    render(config.withNoEncoding)
 
-  override def toString: String =
-    toString(config)
+  override def toString: String = render(io.lemonlabs.uri.config.encoder.default)
 }
 
 object QueryString {

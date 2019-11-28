@@ -2,7 +2,7 @@ package io.lemonlabs.uri
 
 import cats.implicits._
 import cats.{Eq, Order, Show}
-import io.lemonlabs.uri.config.UriConfig
+import io.lemonlabs.uri.config.{UriConfig, UriEncoderConfig}
 import io.lemonlabs.uri.parsing.{UrlParser, UrnParser}
 
 import scala.util.Try
@@ -10,7 +10,7 @@ import scala.util.Try
 sealed trait Path extends Product with Serializable {
   def config: UriConfig
   def parts: Vector[String]
-  private[uri] def toString(config: UriConfig): String
+  def render(implicit config: UriEncoderConfig): String
 
   def isEmpty: Boolean
   def nonEmpty: Boolean = !isEmpty
@@ -19,11 +19,10 @@ sealed trait Path extends Product with Serializable {
     * Returns the path with no encoders taking place (e.g. non ASCII characters will not be percent encoded)
     * @return String containing the raw path for this Uri
     */
-  def toStringRaw: String =
-    toString(config.withNoEncoding)
+  def toStringRaw(implicit config: UriEncoderConfig): String =
+    render(config.withNoEncoding)
 
-  override def toString: String =
-    toString(config)
+  override def toString: String = render(io.lemonlabs.uri.config.encoder.default)
 }
 
 object Path {
@@ -69,7 +68,7 @@ sealed trait UrlPath extends Path {
     * Returns the encoded path. By default non ASCII characters in the path are percent encoded.
     * @return String containing the path for this Uri
     */
-  private[uri] def toString(c: UriConfig): String = {
+  override def render(implicit c: UriEncoderConfig): String = {
     val encodedParts = parts.map(p => c.pathEncoder.encode(p, c.charset))
     encodedParts.mkString("/")
   }
@@ -124,6 +123,7 @@ sealed trait AbsoluteOrEmptyPath extends UrlPath {
   def toRootless: RootlessPath =
     RootlessPath(parts)
 }
+
 object AbsoluteOrEmptyPath {
   implicit val eqAbsoluteOrEmptyPath: Eq[AbsoluteOrEmptyPath] = Eq.fromUniversalEquals
   implicit val showAbsoluteOrEmptyPath: Show[AbsoluteOrEmptyPath] = Show.fromToString
@@ -149,7 +149,7 @@ case object EmptyPath extends AbsoluteOrEmptyPath {
   def unapply(path: UrlPath): Boolean =
     path.isEmpty
 
-  override private[uri] def toString(c: UriConfig): String = ""
+  override def render(implicit c: UriEncoderConfig): String = ""
 }
 
 final case class RootlessPath(parts: Vector[String])(implicit val config: UriConfig = UriConfig.default)
@@ -200,8 +200,8 @@ final case class AbsolutePath(parts: Vector[String])(implicit val config: UriCon
   def isEmpty: Boolean =
     false
 
-  override private[uri] def toString(c: UriConfig): String =
-    "/" + super.toString(c)
+  override def render(implicit config: UriEncoderConfig): String =
+    "/" + super.render(config)
 }
 
 object AbsolutePath {
@@ -223,8 +223,8 @@ final case class UrnPath(nid: String, nss: String)(implicit val config: UriConfi
   def isEmpty: Boolean =
     false
 
-  private[uri] def toString(c: UriConfig): String =
-    nid + ":" + c.pathEncoder.encode(nss, c.charset)
+  def render(implicit config: UriEncoderConfig): String =
+    nid + ":" + config.pathEncoder.encode(nss, config.charset)
 }
 
 object UrnPath {

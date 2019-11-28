@@ -2,14 +2,12 @@ package io.lemonlabs.uri
 
 import cats.implicits._
 import cats.{Eq, Order, Show}
-import io.lemonlabs.uri.config.UriConfig
+import io.lemonlabs.uri.config.{UriConfig, UriEncoderConfig}
 import io.lemonlabs.uri.parsing.UrlParser
 
 import scala.util.Try
 
-case class Authority(userInfo: Option[UserInfo], host: Host, port: Option[Int])(
-    implicit config: UriConfig = UriConfig.default
-) {
+case class Authority(userInfo: Option[UserInfo], host: Host, port: Option[Int]) {
   def user: Option[String] = userInfo.map(_.user)
   def password: Option[String] = userInfo.flatMap(_.password)
 
@@ -73,8 +71,8 @@ case class Authority(userInfo: Option[UserInfo], host: Host, port: Option[Int])(
   def longestSubdomain: Option[String] =
     host.longestSubdomain
 
-  private[uri] def toString(c: UriConfig, hostToString: Host => String): String = {
-    val userInfoStr = userInfo.map(_.toString(c) + "@").getOrElse("")
+  def render(c: UriEncoderConfig, hostToString: Host => String): String = {
+    val userInfoStr = userInfo.map(_.render(c) + "@").getOrElse("")
     userInfoStr + hostToString(host) + port.map(":" + _).getOrElse("")
   }
 
@@ -82,14 +80,13 @@ case class Authority(userInfo: Option[UserInfo], host: Host, port: Option[Int])(
     * @return the domain name in ASCII Compatible Encoding (ACE), as defined by the ToASCII
     *         operation of <a href="http://www.ietf.org/rfc/rfc3490.txt">RFC 3490</a>.
     */
-  def toStringPunycode: String =
-    toString(config, _.toStringPunycode)
+  def toStringPunycode(implicit ec: UriEncoderConfig): String =
+    render(ec, _.toStringPunycode)
 
-  override def toString: String =
-    toString(config, _.toString)
+  override def toString: String = render(config.encoder.default, _.toString)
 
-  def toStringRaw: String =
-    toString(config.withNoEncoding, _.toString)
+  def toStringRaw(implicit ec: UriEncoderConfig): String =
+    render(ec.withNoEncoding, _.toString)
 }
 
 object Authority {
@@ -121,21 +118,19 @@ object Authority {
   }
 }
 
-case class UserInfo(user: String, password: Option[String])(
-    implicit config: UriConfig = UriConfig.default
-) {
-  private[uri] def toString(c: UriConfig): String = {
+case class UserInfo(user: String, password: Option[String]) {
+  def render(implicit c: UriEncoderConfig): String = {
     val userStrEncoded = c.userInfoEncoder.encode(user, c.charset)
     val passwordStrEncoded = password.map(p => ":" + c.userInfoEncoder.encode(p, c.charset)).getOrElse("")
     userStrEncoded + passwordStrEncoded
   }
 
-  override def toString: String =
-    toString(config)
+  override def toString: String = render(config.encoder.default)
 
-  def toStringRaw: String =
-    toString(config.withNoEncoding)
+  def toStringRaw(implicit ec: UriEncoderConfig): String =
+    render(ec.withNoEncoding)
 }
+
 object UserInfo {
   def apply(user: String): UserInfo =
     new UserInfo(user, password = None)

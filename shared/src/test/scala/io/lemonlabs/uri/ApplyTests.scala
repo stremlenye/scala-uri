@@ -1,5 +1,6 @@
 package io.lemonlabs.uri
 
+import io.lemonlabs.uri.config.encoder.default
 import org.scalatest.FlatSpec
 import org.scalatest.Matchers
 
@@ -9,7 +10,7 @@ class ApplyTests extends FlatSpec with Matchers {
     url shouldBe an[AbsoluteUrl]
     url.schemeOption should equal(Some("http"))
     url.hostOption should equal(Some(DomainName("theon.github.com")))
-    url.path.toString() should equal("/blah")
+    url.path.render should equal("/blah")
     url.query should equal(QueryString.empty)
   }
 
@@ -18,7 +19,7 @@ class ApplyTests extends FlatSpec with Matchers {
     url shouldBe an[AbsoluteUrl]
     url.schemeOption should equal(Some("http"))
     url.hostOption should equal(Some(DomainName("example.com")))
-    url.path.toString() should equal("")
+    url.path.render should equal("")
     url.query should equal(QueryString.empty)
   }
 
@@ -27,7 +28,7 @@ class ApplyTests extends FlatSpec with Matchers {
     url shouldBe an[ProtocolRelativeUrl]
     url.schemeOption should equal(None)
     url.hostOption should equal(Some(DomainName("example.com")))
-    url.path.toString() should equal("/example")
+    url.path.render should equal("/example")
     url.query should equal(QueryString.empty)
   }
 
@@ -36,7 +37,7 @@ class ApplyTests extends FlatSpec with Matchers {
     url shouldBe an[UrlWithoutAuthority]
     url.schemeOption should equal(Some("mailto"))
     url.hostOption should equal(None)
-    url.path.toString() should equal("example@example.com")
+    url.path.render should equal("example@example.com")
     url.query should equal(QueryString.empty)
   }
 
@@ -60,6 +61,6 @@ class ApplyTests extends FlatSpec with Matchers {
 
   it should "automatically add a slash when missing if authority is specified" in {
     val url = Url(host = "example.com", path = "example")
-    url.path.toString() should equal("/example")
+    url.path.render should equal("/example")
   }
 }

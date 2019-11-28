@@ -1,6 +1,6 @@
 package io.lemonlabs.uri
 
-import io.lemonlabs.uri.config.{All, ExcludeNones, UriConfig}
+import io.lemonlabs.uri.config.{All, ExcludeNones, UriConfig, UriEncoderConfig}
 import org.scalatest.{FlatSpec, Matchers}
 
 class DslTests extends FlatSpec with Matchers {
@@ -32,19 +32,19 @@ class DslTests extends FlatSpec with Matchers {
   }
 
   "Query string parameters with value None" should "not be rendered with renderQuery=ExcludeNones" in {
-    implicit val config: UriConfig = UriConfig(renderQuery = ExcludeNones)
+    val config: UriEncoderConfig = UriEncoderConfig(renderQuery = ExcludeNones)
     val uri = "/uris-in-scala.html" ? ("testOne" -> None) & ("testTwo" -> "2") & ("testThree" -> None)
-    uri.toString should equal("/uris-in-scala.html?testTwo=2")
+    uri.render(config) should equal("/uris-in-scala.html?testTwo=2")
   }
 
   "Single Query string parameter with value None" should "not be rendered with renderQuery=ExcludeNones" in {
-    implicit val config: UriConfig = UriConfig(renderQuery = ExcludeNones)
+    val config: UriEncoderConfig = UriEncoderConfig(renderQuery = ExcludeNones)
     val uri = "/uris-in-scala.html" ? ("testOne" -> None)
-    uri.toString should equal("/uris-in-scala.html")
+    uri.render(config) should equal("/uris-in-scala.html")
   }
 
   "Query string parameters with value None" should "be rendered with renderQuery=All" in {
-    implicit val config: UriConfig = UriConfig(renderQuery = All)
+    implicit val config: UriEncoderConfig = UriEncoderConfig(renderQuery = All)
     val uri = "/uris-in-scala.html" ? ("testOne" -> None) & ("testTwo" -> "2") & ("testThree" -> None)
     uri.toString should equal("/uris-in-scala.html?testOne&testTwo=2&testThree")
   }

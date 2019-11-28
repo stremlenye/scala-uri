@@ -1,6 +1,6 @@
 package io.lemonlabs.uri
 
-import io.lemonlabs.uri.config.UriConfig
+import io.lemonlabs.uri.config.{UriConfig, UriEncoderConfig}
 
 package object dsl {
   import scala.language.implicitConversions
@@ -14,5 +14,6 @@ package object dsl {
   implicit def queryParamToUriDsl(kv: (String, Any))(implicit c: UriConfig = UriConfig.default): UrlDsl =
     new UrlDsl(RelativeUrl.empty.addParam(kv._1, kv._2.toString))
 
-  implicit def uriToString(uri: Uri)(implicit c: UriConfig = UriConfig.default): String = uri.toString(c)
+  implicit def uriToString(uri: Uri)(implicit c: UriEncoderConfig = config.encoder.default): String =
+    uri.render(c)
 }

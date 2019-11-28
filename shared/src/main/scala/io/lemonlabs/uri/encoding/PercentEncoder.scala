@@ -3,17 +3,17 @@ package io.lemonlabs.uri.encoding
 import PercentEncoder._
 
 case class PercentEncoder(charsToEncode: Set[Char] = DEFAULT_CHARS_TO_ENCODE) extends UriEncoder {
-  def shouldEncode(ch: Char) = {
-    !ascii(ch) || charsToEncode.contains(ch)
+  def shouldEncode(ch: Char): Boolean = {
+    !isASCII(ch) || charsToEncode.contains(ch)
   }
 
-  def encodeChar(ch: Char) = "%" + toHex(ch)
-  def toHex(ch: Char) = "%04x".format(ch.toInt).substring(2).toUpperCase
+  def encodeChar(ch: Char): String = "%" + toHex(ch)
+  def toHex(ch: Char): String = "%04x".format(ch.toInt).substring(2).toUpperCase
 
   /**
     * Determines if this character is in the ASCII range (excluding control characters)
     */
-  def ascii(ch: Char) = ch > 31 && ch < 127
+  def isASCII(ch: Char): Boolean = ch > 31 && ch < 127
 
   def --(chars: Char*) = new PercentEncoder(charsToEncode.diff(chars.toSet))
   def ++(chars: Char*) = new PercentEncoder(charsToEncode ++ chars)
