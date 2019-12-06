@@ -2,7 +2,7 @@ package io.lemonlabs.uri
 
 import cats.implicits._
 import cats.{Eq, Order, Show}
-import io.lemonlabs.uri.config.UriConfig
+import io.lemonlabs.uri.config.UriDecoderConfig
 import io.lemonlabs.uri.inet._
 import io.lemonlabs.uri.parsing.UrlParser
 
@@ -11,7 +11,7 @@ import scala.collection.immutable
 import scala.util.Try
 
 sealed trait Host {
-  def conf: UriConfig
+  def conf: UriDecoderConfig
   def value: String
   override def toString: String = value
 
@@ -91,13 +91,13 @@ sealed trait Host {
 }
 
 object Host {
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[Host] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[Host] =
     UrlParser.parseHost(s.toString)
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[Host] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[Host] =
     parseTry(s).toOption
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Host =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Host =
     parseTry(s).get
 
   def unapply(host: Host): Option[String] =
@@ -108,7 +108,7 @@ object Host {
   implicit val orderHost: Order[Host] = Order.by(_.value)
 }
 
-final case class DomainName(value: String)(implicit val conf: UriConfig = UriConfig.default)
+final case class DomainName(value: String)(implicit val conf: UriDecoderConfig = UriDecoderConfig.default)
     extends Host
     with PunycodeSupport {
   /**
@@ -220,13 +220,13 @@ final case class DomainName(value: String)(implicit val conf: UriConfig = UriCon
 }
 
 object DomainName {
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[DomainName] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[DomainName] =
     UrlParser.parseDomainName(s.toString)
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[DomainName] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[DomainName] =
     parseTry(s).toOption
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): DomainName =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): DomainName =
     parseTry(s).get
 
   def empty: DomainName = DomainName("")
@@ -236,8 +236,8 @@ object DomainName {
   implicit val orderDomainName: Order[DomainName] = Order.by(_.value)
 }
 
-final case class IpV4(octet1: Byte, octet2: Byte, octet3: Byte, octet4: Byte)(implicit val conf: UriConfig =
-                                                                                UriConfig.default)
+final case class IpV4(octet1: Byte, octet2: Byte, octet3: Byte, octet4: Byte)(implicit val conf: UriDecoderConfig =
+                                                                                UriDecoderConfig.default)
     extends Host {
   private def uByteToInt(b: Byte): Int = b & 0xff
 
@@ -268,13 +268,13 @@ object IpV4 {
     new IpV4(octet1.toByte, octet2.toByte, octet3.toByte, octet4.toByte)
   }
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[IpV4] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[IpV4] =
     UrlParser.parseIpV4(s.toString)
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[IpV4] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[IpV4] =
     parseTry(s).toOption
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): IpV4 =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): IpV4 =
     parseTry(s).get
 
   implicit val eqIpV4: Eq[IpV4] = Eq.fromUniversalEquals
@@ -289,7 +289,7 @@ final case class IpV6(piece1: Char,
                       piece5: Char,
                       piece6: Char,
                       piece7: Char,
-                      piece8: Char)(implicit val conf: UriConfig = UriConfig.default)
+                      piece8: Char)(implicit val conf: UriDecoderConfig = UriDecoderConfig.default)
     extends Host {
   def piece1Int: Int = piece1.toInt
   def piece2Int: Int = piece2.toInt
@@ -407,13 +407,13 @@ object IpV6 {
     IpV6(pieces(0), pieces(1), pieces(2), pieces(3), pieces(4), pieces(5), pieces(6), pieces(7))
   }
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[IpV6] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[IpV6] =
     UrlParser.parseIpV6(s.toString)
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[IpV6] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[IpV6] =
     parseTry(s).toOption
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): IpV6 =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): IpV6 =
     parseTry(s).get
 
   implicit val eqIpV6: Eq[IpV6] = Eq.fromUniversalEquals

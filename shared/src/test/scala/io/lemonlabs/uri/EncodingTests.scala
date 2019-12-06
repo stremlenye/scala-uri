@@ -1,11 +1,11 @@
 package io.lemonlabs.uri
 
-import io.lemonlabs.uri.config.{UriConfig, UriEncoderConfig}
-import io.lemonlabs.uri.config.encoder.default
+import io.lemonlabs.uri.config.{UriDecoderConfig, UriEncoderConfig}
+import io.lemonlabs.uri.encoding.default
 import org.scalatest.{FlatSpec, Matchers}
 
 class EncodingTests extends FlatSpec with Matchers {
-  import encoding._
+  import encoding.{encodeCharAs, percentEncode, spaceAsPlus}
 
   "URI paths" should "be percent encoded" in {
     val url = Url.parse("http://theon.github.com/üris-in-scàla.html")
@@ -29,7 +29,7 @@ class EncodingTests extends FlatSpec with Matchers {
 
   "URI path double quotes" should "be percent encoded when using conservative encoder" in {
     val url = Url.parse("""http://theon.github.com/blah/"quoted"""")
-    url.render(config.encoder.conservative) should equal("http://theon.github.com/blah/%22quoted%22")
+    url.render(encoding.conservative) should equal("http://theon.github.com/blah/%22quoted%22")
   }
 
   "URI path spaces" should "be plus encoded if configured" in {
@@ -51,14 +51,14 @@ class EncodingTests extends FlatSpec with Matchers {
 
   "Querystring double quotes" should "be percent encoded when using conservative encoder" in {
     val url = Url.parse("""http://theon.github.com?blah="quoted"""")
-    url.render(config.encoder.conservative) should equal("http://theon.github.com?blah=%22quoted%22")
+    url.render(encoding.conservative) should equal("http://theon.github.com?blah=%22quoted%22")
   }
 
   "Reserved characters" should "be percent encoded when using conservative encoder" in {
     val url = Url(
       query = QueryString.fromPairs("reserved" -> ":/?#[]@!$&'()*+,;={}\\\n\r")
     )
-    url.render(config.encoder.conservative) should equal(
+    url.render(encoding.conservative) should equal(
       "?reserved=%3A%2F%3F%23%5B%5D%40%21%24%26%27%28%29%2A%2B%2C%3B%3D%7B%7D%5C%0A%0D"
     )
   }
@@ -105,17 +105,17 @@ class EncodingTests extends FlatSpec with Matchers {
 
   "URI path pchars" should "not be encoded by default" in {
     val url = Url.parse("http://example.com/-._~!$&'()*+,;=:@/test")
-    url.render(config.encoder.default) should equal("http://example.com/-._~!$&'()*+,;=:@/test")
+    url.render(encoding.default) should equal("http://example.com/-._~!$&'()*+,;=:@/test")
   }
 
   "Query parameters" should "have control characters encoded" in {
     val url = Url.parse("http://example.com/?control=\u0019\u007F")
-    url.render(config.encoder.default) should equal("http://example.com/?control=%19%7F")
+    url.render(encoding.default) should equal("http://example.com/?control=%19%7F")
   }
 
   "Percent Encoded forward slashes in the path" should "be preserved" in {
     Url.parse("/%2F/").render should equal("/%2F/")
     val builtUrl = Url.parse("http://example.com").addPathPart("1/2")
-    builtUrl.render(config.encoder.default) should equal("http://example.com/1%2F2")
+    builtUrl.render(encoding.default) should equal("http://example.com/1%2F2")
   }
 }

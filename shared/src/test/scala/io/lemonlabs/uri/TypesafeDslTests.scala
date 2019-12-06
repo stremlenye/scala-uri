@@ -1,7 +1,7 @@
 package io.lemonlabs.uri
 
 import io.lemonlabs.uri.config.{All, ExcludeNones, UriEncoderConfig}
-import io.lemonlabs.uri.config.encoder.default
+import io.lemonlabs.uri.encoding.default
 import org.scalatest.{FlatSpec, Matchers}
 
 class TypesafeDslTests extends FlatSpec with Matchers {

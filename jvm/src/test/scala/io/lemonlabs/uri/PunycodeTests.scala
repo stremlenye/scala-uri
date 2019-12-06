@@ -1,6 +1,6 @@
 package io.lemonlabs.uri
 
-import io.lemonlabs.uri.config.encoder.default
+import io.lemonlabs.uri.encoding.default
 import org.scalatest.{FlatSpec, Matchers}
 
 class PunycodeTests extends FlatSpec with Matchers {

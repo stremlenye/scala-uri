@@ -2,13 +2,13 @@ package io.lemonlabs.uri
 
 import cats.implicits._
 import cats.{Eq, Order, Show}
-import io.lemonlabs.uri.config.{UriConfig, UriEncoderConfig}
+import io.lemonlabs.uri.config.{UriDecoderConfig, UriEncoderConfig}
 import io.lemonlabs.uri.parsing.{UrlParser, UrnParser}
 
 import scala.util.Try
 
 sealed trait Path extends Product with Serializable {
-  def config: UriConfig
+  def config: UriDecoderConfig
   def parts: Vector[String]
   def render(implicit config: UriEncoderConfig): String
 
@@ -22,17 +22,17 @@ sealed trait Path extends Product with Serializable {
   def toStringRaw(implicit config: UriEncoderConfig): String =
     render(config.withNoEncoding)
 
-  override def toString: String = render(io.lemonlabs.uri.config.encoder.default)
+  override def toString: String = render(io.lemonlabs.uri.encoding.default)
 }
 
 object Path {
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[Path] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[Path] =
     UrlParser.parsePath(s.toString)
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[Path] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[Path] =
     parseTry(s).toOption
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Path =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Path =
     parseTry(s).get
 
   def unapply(path: Path): Option[Vector[String]] =
@@ -83,20 +83,20 @@ object UrlPath {
     if (parts.isEmpty) EmptyPath
     else AbsolutePath(parts.toVector)
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[UrlPath] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[UrlPath] =
     UrlParser.parsePath(s.toString)
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[UrlPath] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[UrlPath] =
     parseTry(s).toOption
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): UrlPath =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): UrlPath =
     parseTry(s).get
 
   /**
     * Unlike `UrlPath.parse`, this method treats the supplied String as a raw path and does not
     * require reserved characters to be PercentEncoded
     */
-  def fromRaw(s: String)(implicit config: UriConfig = UriConfig.default): UrlPath = {
+  def fromRaw(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): UrlPath = {
     def parts = s.split('/').toVector
     s.headOption match {
       case None      => EmptyPath
@@ -140,8 +140,8 @@ case object EmptyPath extends AbsoluteOrEmptyPath {
   def withParts(parts: Iterable[String]): UrlPath =
     UrlPath(parts.toVector)
 
-  def config: UriConfig =
-    UriConfig.default
+  def config: UriDecoderConfig =
+    UriDecoderConfig.default
 
   def parts: Vector[String] =
     Vector.empty
@@ -152,7 +152,7 @@ case object EmptyPath extends AbsoluteOrEmptyPath {
   override def render(implicit c: UriEncoderConfig): String = ""
 }
 
-final case class RootlessPath(parts: Vector[String])(implicit val config: UriConfig = UriConfig.default)
+final case class RootlessPath(parts: Vector[String])(implicit val config: UriDecoderConfig = UriDecoderConfig.default)
     extends UrlPath {
   def toRootless: RootlessPath =
     this
@@ -175,7 +175,7 @@ final case class RootlessPath(parts: Vector[String])(implicit val config: UriCon
 }
 
 object RootlessPath {
-  def fromParts(parts: String*)(implicit config: UriConfig = UriConfig.default): RootlessPath =
+  def fromParts(parts: String*)(implicit config: UriDecoderConfig = UriDecoderConfig.default): RootlessPath =
     new RootlessPath(parts.toVector)
 
   implicit val eqRootlessPath: Eq[RootlessPath] = Eq.fromUniversalEquals
@@ -186,7 +186,7 @@ object RootlessPath {
 /**
   * An AbsolutePath is a path that starts with a slash
   */
-final case class AbsolutePath(parts: Vector[String])(implicit val config: UriConfig = UriConfig.default)
+final case class AbsolutePath(parts: Vector[String])(implicit val config: UriDecoderConfig = UriDecoderConfig.default)
     extends AbsoluteOrEmptyPath {
   def toAbsolute: AbsolutePath =
     this
@@ -205,7 +205,7 @@ final case class AbsolutePath(parts: Vector[String])(implicit val config: UriCon
 }
 
 object AbsolutePath {
-  def fromParts(parts: String*)(implicit config: UriConfig = UriConfig.default): AbsolutePath =
+  def fromParts(parts: String*)(implicit config: UriDecoderConfig = UriDecoderConfig.default): AbsolutePath =
     new AbsolutePath(parts.toVector)
 
   implicit val eqAbsolutePath: Eq[AbsolutePath] = Eq.fromUniversalEquals
@@ -213,7 +213,8 @@ object AbsolutePath {
   implicit val orderAbsolutePath: Order[AbsolutePath] = Order.by(_.parts)
 }
 
-final case class UrnPath(nid: String, nss: String)(implicit val config: UriConfig = UriConfig.default) extends Path {
+final case class UrnPath(nid: String, nss: String)(implicit val config: UriDecoderConfig = UriDecoderConfig.default)
+    extends Path {
   def parts: Vector[String] =
     Vector(nid, nss)
 
@@ -228,13 +229,13 @@ final case class UrnPath(nid: String, nss: String)(implicit val config: UriConfi
 }
 
 object UrnPath {
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[UrnPath] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[UrnPath] =
     UrnParser.parseUrnPath(s.toString)
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[UrnPath] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[UrnPath] =
     parseTry(s).toOption
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): UrnPath =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): UrnPath =
     parseTry(s).get
 
   implicit val eqUrnPath: Eq[UrnPath] = Eq.fromUniversalEquals

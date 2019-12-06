@@ -1,13 +1,15 @@
 package io.lemonlabs.uri.parsing
 
-import io.lemonlabs.uri.config.UriConfig
+import io.lemonlabs.uri.config.UriDecoderConfig
 import io.lemonlabs.uri.{Urn, UrnPath}
 import org.parboiled2.CharPredicate._
 import org.parboiled2._
 
 import scala.util.{Failure, Try}
 
-class UrnParser(val input: ParserInput)(implicit conf: UriConfig = UriConfig.default) extends Parser with UriParser {
+class UrnParser(val input: ParserInput)(implicit conf: UriDecoderConfig = UriDecoderConfig.default)
+    extends Parser
+    with UriParser {
   def _empty: Rule0 = MATCH
 
   def _nid: Rule1[String] = rule {
@@ -52,12 +54,12 @@ class UrnParser(val input: ParserInput)(implicit conf: UriConfig = UriConfig.def
     mapParseError(rule(_urn ~ EOI).run(), "URN")
 }
 object UrnParser {
-  def apply(s: CharSequence)(implicit config: UriConfig = UriConfig.default): UrnParser =
+  def apply(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): UrnParser =
     new UrnParser(s.toString)
 
-  def parseUrn(s: String)(implicit config: UriConfig = UriConfig.default): Try[Urn] =
+  def parseUrn(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[Urn] =
     UrnParser(s).parseUrn()
 
-  def parseUrnPath(s: String)(implicit config: UriConfig = UriConfig.default): Try[UrnPath] =
+  def parseUrnPath(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[UrnPath] =
     UrnParser(s).parseUrnPath()
 }

@@ -2,12 +2,13 @@ package io.lemonlabs.uri
 
 import cats.implicits._
 import cats.{Eq, Order, Show}
-import io.lemonlabs.uri.config.{All, ExcludeNones, UriConfig, UriEncoderConfig}
+import io.lemonlabs.uri.config.{All, ExcludeNones, UriDecoderConfig, UriEncoderConfig}
 import io.lemonlabs.uri.parsing.UrlParser
 
 import scala.util.Try
 
-case class QueryString(params: Vector[(String, Option[String])])(implicit config: UriConfig = UriConfig.default) {
+case class QueryString(params: Vector[(String, Option[String])])(implicit config: UriDecoderConfig =
+                                                                   UriDecoderConfig.default) {
   lazy val paramMap: Map[String, Vector[String]] = params.foldLeft(Map.empty[String, Vector[String]]) {
     case (m, (k, Some(v))) =>
       val values = m.getOrElse(k, Vector.empty)
@@ -292,31 +293,35 @@ case class QueryString(params: Vector[(String, Option[String])])(implicit config
   def toStringRaw(implicit config: UriEncoderConfig): String =
     render(config.withNoEncoding)
 
-  override def toString: String = render(io.lemonlabs.uri.config.encoder.default)
+  override def toString: String = render(io.lemonlabs.uri.encoding.default)
 }
 
 object QueryString {
-  def fromPairOptions(params: (String, Option[String])*)(implicit config: UriConfig = UriConfig.default): QueryString =
+  def fromPairOptions(
+      params: (String, Option[String])*
+  )(implicit config: UriDecoderConfig = UriDecoderConfig.default): QueryString =
     new QueryString(params.toVector)
 
-  def fromPairs(params: (String, String)*)(implicit config: UriConfig = UriConfig.default): QueryString =
+  def fromPairs(params: (String, String)*)(implicit config: UriDecoderConfig = UriDecoderConfig.default): QueryString =
     fromTraversable(params)
 
-  def fromTraversable(params: Iterable[(String, String)])(implicit config: UriConfig = UriConfig.default): QueryString =
+  def fromTraversable(
+      params: Iterable[(String, String)]
+  )(implicit config: UriDecoderConfig = UriDecoderConfig.default): QueryString =
     new QueryString(params.toVector.map {
       case (k, v) => (k, Some(v))
     })
 
-  def empty(implicit config: UriConfig = UriConfig.default): QueryString =
+  def empty(implicit config: UriDecoderConfig = UriDecoderConfig.default): QueryString =
     new QueryString(Vector.empty)
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[QueryString] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[QueryString] =
     UrlParser.parseQuery(s.toString)
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[QueryString] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[QueryString] =
     parseTry(s).toOption
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): QueryString =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): QueryString =
     parseTry(s).get
 
   implicit val eqQueryString: Eq[QueryString] = Eq.fromUniversalEquals

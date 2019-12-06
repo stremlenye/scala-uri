@@ -2,8 +2,8 @@ package io.lemonlabs.uri
 
 import org.scalatest.{FlatSpec, Matchers}
 import io.lemonlabs.uri.decoding.{NoopDecoder, UriDecodeException}
-import io.lemonlabs.uri.config.UriConfig
-import io.lemonlabs.uri.config.encoder.default
+import io.lemonlabs.uri.config.UriDecoderConfig
+import io.lemonlabs.uri.encoding.default
 
 class DecodingTests extends FlatSpec with Matchers {
   "Reserved characters" should "be percent decoded during parsing" in {
@@ -21,7 +21,7 @@ class DecodingTests extends FlatSpec with Matchers {
   }
 
   "Percent decoding" should "be disabled when requested" in {
-    implicit val c = UriConfig(decoder = NoopDecoder)
+    implicit val c = UriDecoderConfig(decoder = NoopDecoder)
     val uri = Url.parse(
       "http://theon.github.com/uris-in-scala.html?reserved=%3A%2F%3F%23%5B%5D%40%21%24%26%27%28%29%2A%2B%2C%3B%3D%7B%7D%5C%0A%0D"
     )

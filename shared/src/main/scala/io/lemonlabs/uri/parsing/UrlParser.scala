@@ -1,14 +1,16 @@
 package io.lemonlabs.uri.parsing
 
 import io.lemonlabs.uri._
-import io.lemonlabs.uri.config.UriConfig
+import io.lemonlabs.uri.config.UriDecoderConfig
 import org.parboiled2.CharPredicate._
 import org.parboiled2._
 
 import scala.collection.immutable
 import scala.util.{Failure, Try}
 
-class UrlParser(val inputRaw: String)(implicit conf: UriConfig = UriConfig.default) extends Parser with UriParser {
+class UrlParser(val inputRaw: String)(implicit conf: UriDecoderConfig = UriDecoderConfig.default)
+    extends Parser
+    with UriParser {
   def input: ParserInput =
     inputRaw.linesIterator.mkString // Remove newlines
 
@@ -317,61 +319,69 @@ class UrlParser(val inputRaw: String)(implicit conf: UriConfig = UriConfig.defau
 }
 
 object UrlParser {
-  def apply(s: CharSequence)(implicit config: UriConfig = UriConfig.default): UrlParser =
+  def apply(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): UrlParser =
     new UrlParser(s.toString)
 
-  def parseIpV6(s: String)(implicit config: UriConfig = UriConfig.default): Try[IpV6] =
+  def parseIpV6(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[IpV6] =
     UrlParser(s).parseIpV6()
 
-  def parseIpV4(s: String)(implicit config: UriConfig = UriConfig.default): Try[IpV4] =
+  def parseIpV4(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[IpV4] =
     UrlParser(s).parseIpV4()
 
-  def parseDomainName(s: String)(implicit config: UriConfig = UriConfig.default): Try[DomainName] =
+  def parseDomainName(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[DomainName] =
     UrlParser(s).parseDomainName()
 
-  def parseHost(s: String)(implicit config: UriConfig = UriConfig.default): Try[Host] =
+  def parseHost(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[Host] =
     UrlParser(s).parseHost()
 
-  def parseUserInfo(s: String)(implicit config: UriConfig = UriConfig.default): Try[UserInfo] =
+  def parseUserInfo(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[UserInfo] =
     UrlParser(s).parseUserInfo()
 
-  def parseUrlWithoutAuthority(s: String)(implicit config: UriConfig = UriConfig.default): Try[UrlWithoutAuthority] =
+  def parseUrlWithoutAuthority(
+      s: String
+  )(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[UrlWithoutAuthority] =
     UrlParser(s).parseUrlWithoutAuthority()
 
   def parseSimpleUrlWithoutAuthority(
       s: String
-  )(implicit config: UriConfig = UriConfig.default): Try[SimpleUrlWithoutAuthority] =
+  )(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[SimpleUrlWithoutAuthority] =
     UrlParser(s).parseSimpleUrlWithoutAuthority()
 
-  def parseDataUrl(s: String)(implicit config: UriConfig = UriConfig.default): Try[DataUrl] =
+  def parseDataUrl(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[DataUrl] =
     UrlParser(s).parseDataUrl()
 
-  def parseAbsoluteUrl(s: String)(implicit config: UriConfig = UriConfig.default): Try[AbsoluteUrl] =
+  def parseAbsoluteUrl(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[AbsoluteUrl] =
     UrlParser(s).parseAbsoluteUrl()
 
-  def parseProtocolRelativeUrl(s: String)(implicit config: UriConfig = UriConfig.default): Try[ProtocolRelativeUrl] =
+  def parseProtocolRelativeUrl(
+      s: String
+  )(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[ProtocolRelativeUrl] =
     UrlParser(s).parseProtocolRelativeUrl()
 
-  def parseUrlWithAuthority(s: String)(implicit config: UriConfig = UriConfig.default): Try[UrlWithAuthority] =
+  def parseUrlWithAuthority(
+      s: String
+  )(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[UrlWithAuthority] =
     UrlParser(s).parseUrlWithAuthority()
 
-  def parseRelativeUrl(s: String)(implicit config: UriConfig = UriConfig.default): Try[RelativeUrl] =
+  def parseRelativeUrl(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[RelativeUrl] =
     UrlParser(s).parseRelativeUrl()
 
-  def parsePath(s: String)(implicit config: UriConfig = UriConfig.default): Try[UrlPath] =
+  def parsePath(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[UrlPath] =
     UrlParser(s).parsePath()
 
-  def parseAuthority(s: String)(implicit config: UriConfig = UriConfig.default): Try[Authority] =
+  def parseAuthority(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[Authority] =
     UrlParser(s).parseAuthority()
 
-  def parseUrl(s: String)(implicit config: UriConfig = UriConfig.default): Try[Url] =
+  def parseUrl(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[Url] =
     UrlParser(s).parseUrl()
 
-  def parseQuery(s: String)(implicit config: UriConfig = UriConfig.default): Try[QueryString] = {
+  def parseQuery(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[QueryString] = {
     val withQuestionMark = if (s.head == '?') s else "?" + s
     UrlParser(withQuestionMark).parseQuery()
   }
 
-  def parseQueryParam(s: String)(implicit config: UriConfig = UriConfig.default): Try[(String, Option[String])] =
+  def parseQueryParam(
+      s: String
+  )(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[(String, Option[String])] =
     UrlParser(s).parseQueryParam()
 }

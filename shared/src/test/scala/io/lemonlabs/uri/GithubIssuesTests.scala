@@ -1,6 +1,6 @@
 package io.lemonlabs.uri
 
-import io.lemonlabs.uri.config.UriConfig
+import io.lemonlabs.uri.config.UriDecoderConfig
 import io.lemonlabs.uri.decoding.{PercentDecoder, UriDecodeException}
 import io.lemonlabs.uri.encoding.NoopEncoder
 import org.scalatest.{FlatSpec, Matchers, OptionValues}
@@ -22,9 +22,9 @@ class GithubIssuesTests extends FlatSpec with Matchers with OptionValues {
   }
 
   it should "leave invalid percent encoded entities as-is when ignoreInvalidPercentEncoding=true" in {
-    implicit val c = UriConfig(decoder = PercentDecoder(ignoreInvalidPercentEncoding = true))
+    implicit val c = UriDecoderConfig(decoder = PercentDecoder(ignoreInvalidPercentEncoding = true))
     Vector("/?x=%3", "/%3", "/?a=%3&b=whatever", "/?%3=okay").foreach { part =>
-      Url.parse(part).render(config.encoder.noopEncoding) shouldBe part
+      Url.parse(part).render(encoding.noopEncoding) shouldBe part
     }
   }
 
@@ -39,10 +39,10 @@ class GithubIssuesTests extends FlatSpec with Matchers with OptionValues {
   }
 
   "Github Issue #30" should "handle correctly percent encoded URLs when ignoreInvalidPercentEncoding=true" in {
-    implicit val c = UriConfig(
+    implicit val c = UriDecoderConfig(
       decoder = PercentDecoder(ignoreInvalidPercentEncoding = true)
     )
     val url = Url.parse("http://example.com/path%20with%20space")
-    url.render(config.encoder.default) should equal("http://example.com/path%20with%20space")
+    url.render(encoding.default) should equal("http://example.com/path%20with%20space")
   }
 }

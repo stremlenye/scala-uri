@@ -2,7 +2,7 @@ package io.lemonlabs.uri
 
 import cats.implicits._
 import cats.{Eq, Order, Show}
-import io.lemonlabs.uri.config.{UriConfig, UriEncoderConfig}
+import io.lemonlabs.uri.config.{UriDecoderConfig, UriEncoderConfig}
 import io.lemonlabs.uri.parsing.UrlParser
 
 import scala.util.Try
@@ -83,32 +83,32 @@ case class Authority(userInfo: Option[UserInfo], host: Host, port: Option[Int]) 
   def toStringPunycode(implicit ec: UriEncoderConfig): String =
     render(ec, _.toStringPunycode)
 
-  override def toString: String = render(config.encoder.default, _.toString)
+  override def toString: String = render(encoding.default, _.toString)
 
   def toStringRaw(implicit ec: UriEncoderConfig): String =
     render(ec.withNoEncoding, _.toString)
 }
 
 object Authority {
-  def apply(host: String)(implicit config: UriConfig): Authority =
+  def apply(host: String)(implicit config: UriDecoderConfig): Authority =
     new Authority(None, Host.parse(host), port = None)
 
-  def apply(host: Host)(implicit config: UriConfig): Authority =
+  def apply(host: Host)(implicit config: UriDecoderConfig): Authority =
     new Authority(None, host, port = None)
 
-  def apply(host: String, port: Int)(implicit config: UriConfig): Authority =
+  def apply(host: String, port: Int)(implicit config: UriDecoderConfig): Authority =
     new Authority(None, Host.parse(host), Some(port))
 
-  def apply(host: Host, port: Int)(implicit config: UriConfig): Authority =
+  def apply(host: Host, port: Int)(implicit config: UriDecoderConfig): Authority =
     new Authority(None, host, Some(port))
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[Authority] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[Authority] =
     UrlParser.parseAuthority(s.toString)
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[Authority] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[Authority] =
     parseTry(s).toOption
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Authority =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Authority =
     parseTry(s).get
 
   implicit val eqAuthority: Eq[Authority] = Eq.fromUniversalEquals
@@ -125,7 +125,7 @@ case class UserInfo(user: String, password: Option[String]) {
     userStrEncoded + passwordStrEncoded
   }
 
-  override def toString: String = render(config.encoder.default)
+  override def toString: String = render(encoding.default)
 
   def toStringRaw(implicit ec: UriEncoderConfig): String =
     render(ec.withNoEncoding)
@@ -138,13 +138,13 @@ object UserInfo {
   def apply(user: String, password: String): UserInfo =
     new UserInfo(user, Some(password))
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[UserInfo] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[UserInfo] =
     UrlParser.parseUserInfo(s.toString)
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[UserInfo] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[UserInfo] =
     parseTry(s).toOption
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): UserInfo =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): UserInfo =
     parseTry(s).get
 
   implicit val eqUserInfo: Eq[UserInfo] = Eq.fromUniversalEquals

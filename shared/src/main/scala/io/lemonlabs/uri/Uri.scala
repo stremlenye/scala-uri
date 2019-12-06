@@ -4,7 +4,7 @@ import java.util.Base64
 
 import cats.implicits._
 import cats.{Eq, Order, Show}
-import io.lemonlabs.uri.config.{UriConfig, UriEncoderConfig}
+import io.lemonlabs.uri.config.{UriDecoderConfig, UriEncoderConfig}
 import io.lemonlabs.uri.parsing.{UriParser, UrlParser, UrnParser}
 
 import scala.util.Try
@@ -33,7 +33,7 @@ sealed trait Uri extends Product with Serializable {
 
   private[uri] def self: Self
 
-  implicit def config: UriConfig
+  implicit def config: UriDecoderConfig
 
   def schemeOption: Option[String]
   def path: Path
@@ -67,7 +67,7 @@ sealed trait Uri extends Product with Serializable {
   def toStringRaw(implicit config: UriEncoderConfig): String =
     render(config.withNoEncoding)
 
-  override def toString: String = render(io.lemonlabs.uri.config.encoder.default)
+  override def toString: String = render(io.lemonlabs.uri.encoding.default)
 
   def render(implicit config: UriEncoderConfig): String
 }
@@ -79,13 +79,13 @@ object Uri {
   def unapply(uri: Uri): Option[Path] =
     Some(uri.path)
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[Uri] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[Uri] =
     Try(s.toString).flatMap(UriParser.parseUri)
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[Uri] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[Uri] =
     parseTry(s).toOption
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Uri =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Uri =
     parseTry(s).get
 
   import cats.implicits._
@@ -542,7 +542,7 @@ object Url {
             port: Int = -1,
             path: String = "",
             query: QueryString = QueryString.empty,
-            fragment: String = null)(implicit config: UriConfig = UriConfig.default): Url = {
+            fragment: String = null)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Url = {
     val urlPath = UrlPath.parse(path)
     val frag = Option(fragment)
     def authority = {
@@ -562,13 +562,13 @@ object Url {
   def unapply(url: Url): Option[(UrlPath, QueryString, Option[String])] =
     Some((url.path, url.query, url.fragment))
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Url =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Url =
     parseTry(s).get
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[Url] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[Url] =
     parseTry(s).toOption
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[Url] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[Url] =
     UrlParser.parseUrl(s.toString)
 
   implicit val eqUrl: Eq[Url] = Eq.fromUniversalEquals
@@ -585,7 +585,7 @@ object Url {
   *    (with dot segment): `../index.html?a=b`
   */
 final case class RelativeUrl(path: UrlPath, query: QueryString, fragment: Option[String])(
-    implicit val config: UriConfig = UriConfig.default
+    implicit val config: UriDecoderConfig = UriDecoderConfig.default
 ) extends Url {
   type Self = RelativeUrl
   type SelfWithAuthority = ProtocolRelativeUrl
@@ -640,13 +640,13 @@ object RelativeUrl {
   def empty: RelativeUrl =
     RelativeUrl(UrlPath.empty, QueryString.empty, None)
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): RelativeUrl =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): RelativeUrl =
     parseTry(s).get
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[RelativeUrl] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[RelativeUrl] =
     parseTry(s).toOption
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[RelativeUrl] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[RelativeUrl] =
     UrlParser.parseRelativeUrl(s.toString)
 
   implicit val eqRelUrl: Eq[RelativeUrl] = Eq.fromUniversalEquals
@@ -784,13 +784,15 @@ object UrlWithAuthority {
   def unapply(url: UrlWithAuthority): Option[(Authority, UrlPath, QueryString, Option[String])] =
     Some((url.authority, url.path, url.query, url.fragment))
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): UrlWithAuthority =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): UrlWithAuthority =
     parseTry(s).get
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[UrlWithAuthority] =
+  def parseOption(
+      s: CharSequence
+  )(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[UrlWithAuthority] =
     parseTry(s).toOption
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[UrlWithAuthority] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[UrlWithAuthority] =
     UrlParser.parseUrlWithAuthority(s.toString)
 
   implicit val eqUrlWithAuthority: Eq[UrlWithAuthority] = Eq.fromUniversalEquals
@@ -801,10 +803,12 @@ object UrlWithAuthority {
 /**
   * Represents absolute URLs, for example: `//example.com`
   */
-final case class ProtocolRelativeUrl(authority: Authority,
-                                     path: AbsoluteOrEmptyPath,
-                                     query: QueryString,
-                                     fragment: Option[String])(implicit val config: UriConfig = UriConfig.default)
+final case class ProtocolRelativeUrl(
+    authority: Authority,
+    path: AbsoluteOrEmptyPath,
+    query: QueryString,
+    fragment: Option[String]
+)(implicit val config: UriDecoderConfig = UriDecoderConfig.default)
     extends UrlWithAuthority {
   type Self = ProtocolRelativeUrl
   type SelfWithScheme = AbsoluteUrl
@@ -844,13 +848,17 @@ final case class ProtocolRelativeUrl(authority: Authority,
 }
 
 object ProtocolRelativeUrl {
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): ProtocolRelativeUrl =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): ProtocolRelativeUrl =
     parseTry(s).get
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[ProtocolRelativeUrl] =
+  def parseOption(
+      s: CharSequence
+  )(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[ProtocolRelativeUrl] =
     parseTry(s).toOption
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[ProtocolRelativeUrl] =
+  def parseTry(
+      s: CharSequence
+  )(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[ProtocolRelativeUrl] =
     UrlParser.parseProtocolRelativeUrl(s.toString)
 
   implicit val eqProtocolRelUrl: Eq[ProtocolRelativeUrl] = Eq.fromUniversalEquals
@@ -867,7 +875,7 @@ final case class AbsoluteUrl(scheme: String,
                              authority: Authority,
                              path: AbsoluteOrEmptyPath,
                              query: QueryString,
-                             fragment: Option[String])(implicit val config: UriConfig = UriConfig.default)
+                             fragment: Option[String])(implicit val config: UriDecoderConfig = UriDecoderConfig.default)
     extends UrlWithAuthority {
   type Self = AbsoluteUrl
   type SelfWithScheme = AbsoluteUrl
@@ -907,13 +915,13 @@ final case class AbsoluteUrl(scheme: String,
 }
 
 object AbsoluteUrl {
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): AbsoluteUrl =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): AbsoluteUrl =
     parseTry(s).get
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[AbsoluteUrl] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[AbsoluteUrl] =
     parseTry(s).toOption
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[AbsoluteUrl] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[AbsoluteUrl] =
     UrlParser.parseAbsoluteUrl(s.toString)
 
   implicit val eqAbsUrl: Eq[AbsoluteUrl] = Eq.fromUniversalEquals
@@ -948,20 +956,24 @@ sealed trait UrlWithoutAuthority extends Url {
 
 object UrlWithoutAuthority {
   def apply(scheme: String, path: UrlPath, query: QueryString, fragment: Option[String])(
-      implicit config: UriConfig = UriConfig.default
+      implicit config: UriDecoderConfig = UriDecoderConfig.default
   ): UrlWithoutAuthority =
     SimpleUrlWithoutAuthority(scheme, path, query, fragment)(config)
 
   def unapply(url: UrlWithoutAuthority): Option[(String, UrlPath, QueryString, Option[String])] =
     Some((url.scheme, url.path, url.query, url.fragment))
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): UrlWithoutAuthority =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): UrlWithoutAuthority =
     parseTry(s).get
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[UrlWithoutAuthority] =
+  def parseOption(
+      s: CharSequence
+  )(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[UrlWithoutAuthority] =
     parseTry(s).toOption
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[UrlWithoutAuthority] =
+  def parseTry(
+      s: CharSequence
+  )(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[UrlWithoutAuthority] =
     UrlParser.parseUrlWithoutAuthority(s.toString)
 
   implicit val eqUrlWithoutAuthority: Eq[UrlWithoutAuthority] = Eq.fromUniversalEquals
@@ -972,7 +984,7 @@ object UrlWithoutAuthority {
 }
 
 final case class SimpleUrlWithoutAuthority(scheme: String, path: UrlPath, query: QueryString, fragment: Option[String])(
-    implicit val config: UriConfig = UriConfig.default
+    implicit val config: UriDecoderConfig = UriDecoderConfig.default
 ) extends UrlWithoutAuthority {
   type Self = SimpleUrlWithoutAuthority
   type SelfWithScheme = SimpleUrlWithoutAuthority
@@ -1025,13 +1037,17 @@ final case class SimpleUrlWithoutAuthority(scheme: String, path: UrlPath, query:
 }
 
 object SimpleUrlWithoutAuthority {
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): SimpleUrlWithoutAuthority =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): SimpleUrlWithoutAuthority =
     parseTry(s).get
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[SimpleUrlWithoutAuthority] =
+  def parseOption(
+      s: CharSequence
+  )(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[SimpleUrlWithoutAuthority] =
     parseTry(s).toOption
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[SimpleUrlWithoutAuthority] =
+  def parseTry(
+      s: CharSequence
+  )(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[SimpleUrlWithoutAuthority] =
     UrlParser.parseSimpleUrlWithoutAuthority(s.toString)
 
   implicit val eqSimpleUrlWithoutAuthority: Eq[SimpleUrlWithoutAuthority] = Eq.fromUniversalEquals
@@ -1044,9 +1060,9 @@ object SimpleUrlWithoutAuthority {
 /**
   * Represents URLs with the data scheme, for example: `data:text/plain;charset=UTF-8;page=21,the%20data:1234,5678`
   */
-final case class DataUrl(mediaType: MediaType, base64: Boolean, data: Array[Byte])(implicit val config: UriConfig =
-                                                                                     UriConfig.default)
-    extends UrlWithoutAuthority {
+final case class DataUrl(mediaType: MediaType, base64: Boolean, data: Array[Byte])(
+    implicit val config: UriDecoderConfig = UriDecoderConfig.default
+) extends UrlWithoutAuthority {
   type Self = DataUrl
   type SelfWithScheme = UrlWithoutAuthority
 
@@ -1057,7 +1073,7 @@ final case class DataUrl(mediaType: MediaType, base64: Boolean, data: Array[Byte
 
   def query: QueryString = QueryString.empty
   def fragment: Option[String] = None
-  def path: UrlPath = RootlessPath.fromParts(pathString(io.lemonlabs.uri.config.encoder.noopEncoding))
+  def path: UrlPath = RootlessPath.fromParts(pathString(io.lemonlabs.uri.encoding.noopEncoding))
 
   /**
     * @return The data from this data URL using the charset provided by the URL's mediatype
@@ -1124,21 +1140,23 @@ final case class DataUrl(mediaType: MediaType, base64: Boolean, data: Array[Byte
 }
 
 object DataUrl {
-  def fromBase64(mediaType: MediaType, data: String)(implicit config: UriConfig = UriConfig.default): DataUrl = {
+  def fromBase64(mediaType: MediaType,
+                 data: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): DataUrl = {
     val base64Data = config.pathDecoder.decodeBytes(data, mediaType.charset)
     DataUrl(mediaType, base64 = true, Base64.getDecoder.decode(base64Data))
   }
 
-  def fromPercentEncoded(mediaType: MediaType, data: String)(implicit config: UriConfig = UriConfig.default): DataUrl =
+  def fromPercentEncoded(mediaType: MediaType, data: String)(implicit config: UriDecoderConfig =
+                                                               UriDecoderConfig.default): DataUrl =
     DataUrl(mediaType, base64 = false, config.pathDecoder.decodeBytes(data, mediaType.charset))
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): DataUrl =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): DataUrl =
     parseTry(s).get
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[DataUrl] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[DataUrl] =
     parseTry(s).toOption
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[DataUrl] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[DataUrl] =
     UrlParser.parseDataUrl(s.toString)
 
   implicit val eqDataUrl: Eq[DataUrl] = Eq.fromUniversalEquals
@@ -1152,7 +1170,7 @@ object DataUrl {
   *
   * URNs will be in the form `urn:nid:nss`
   */
-final case class Urn(path: UrnPath)(implicit val config: UriConfig = UriConfig.default) extends Uri {
+final case class Urn(path: UrnPath)(implicit val config: UriDecoderConfig = UriDecoderConfig.default) extends Uri {
   type Self = Urn
   type SelfWithScheme = UrlWithoutAuthority
 
@@ -1185,13 +1203,13 @@ object Urn {
   def apply(nid: String, nss: String): Urn =
     new Urn(UrnPath(nid, nss))
 
-  def parse(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Urn =
+  def parse(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Urn =
     parseTry(s).get
 
-  def parseOption(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Option[Urn] =
+  def parseOption(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Option[Urn] =
     parseTry(s).toOption
 
-  def parseTry(s: CharSequence)(implicit config: UriConfig = UriConfig.default): Try[Urn] =
+  def parseTry(s: CharSequence)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[Urn] =
     UrnParser.parseUrn(s.toString)
 
   implicit val eqUrn: Eq[Urn] = Eq.fromUniversalEquals

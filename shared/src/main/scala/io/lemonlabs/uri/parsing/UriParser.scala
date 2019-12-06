@@ -1,7 +1,7 @@
 package io.lemonlabs.uri.parsing
 
 import io.lemonlabs.uri.Uri
-import io.lemonlabs.uri.config.UriConfig
+import io.lemonlabs.uri.config.UriDecoderConfig
 import org.parboiled2.CharPredicate
 import org.parboiled2.CharPredicate.{AlphaNum, HexDigit}
 
@@ -22,6 +22,6 @@ trait UriParser {
 }
 
 object UriParser {
-  def parseUri(s: String)(implicit config: UriConfig = UriConfig.default): Try[Uri] =
+  def parseUri(s: String)(implicit config: UriDecoderConfig = UriDecoderConfig.default): Try[Uri] =
     UrnParser.parseUrn(s) orElse UrlParser.parseUrl(s)
 }

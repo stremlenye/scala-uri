@@ -13,8 +13,6 @@ case class UriEncoderConfig(userInfoEncoder: UriEncoder,
 }
 
 object UriEncoderConfig {
-  object instances {}
-
   def apply(encoder: UriEncoder = PercentEncoder(),
             charset: String = "UTF-8",
             renderQuery: RenderQuery = RenderQuery.default): UriEncoderConfig =

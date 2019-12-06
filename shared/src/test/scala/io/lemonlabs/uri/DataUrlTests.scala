@@ -1,9 +1,9 @@
 package io.lemonlabs.uri
 
-import io.lemonlabs.uri.config.{UriConfig, UriEncoderConfig}
+import io.lemonlabs.uri.config.{UriDecoderConfig, UriEncoderConfig}
 import io.lemonlabs.uri.encoding.PercentEncoder
 import org.scalatest.{FlatSpec, Matchers}
-import io.lemonlabs.uri.config.encoder.default
+import io.lemonlabs.uri.encoding.default
 
 class DataUrlTests extends FlatSpec with Matchers {
   "Authority, querystring, fragment" should "be empty" in {
@@ -142,7 +142,7 @@ class DataUrlTests extends FlatSpec with Matchers {
   }
 
   "Changing Authority" should "return an AbsoluteUrl" in {
-    implicit val config: UriConfig = UriConfig.default
+    implicit val config: UriDecoderConfig = UriDecoderConfig.default
     val dataUrl = DataUrl.parse("data:,A%20brief%20note")
     val absoluteUrl = dataUrl.withAuthority(Authority("example.com", 8080))
     absoluteUrl shouldBe an[AbsoluteUrl]

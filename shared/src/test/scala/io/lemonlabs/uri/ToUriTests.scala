@@ -2,7 +2,7 @@ package io.lemonlabs.uri
 
 import java.net.URI
 
-import io.lemonlabs.uri.config.UriConfig
+import io.lemonlabs.uri.config.UriDecoderConfig
 import org.scalatest.{Matchers, WordSpec}
 
 class ToUriTests extends WordSpec with Matchers {
@@ -10,7 +10,7 @@ class ToUriTests extends WordSpec with Matchers {
     "handle simple URL" in {
       val strUri: String = "http://www.example.com"
       val url = Url.parse(strUri)
-      val javaUri: URI = url.toJavaURI(config.encoder.default)
+      val javaUri: URI = url.toJavaURI(encoding.default)
       javaUri.getScheme should equal("http")
       javaUri.getUserInfo should be(null)
       javaUri.getHost should equal("www.example.com")
@@ -23,7 +23,7 @@ class ToUriTests extends WordSpec with Matchers {
     "handle scheme-less URL" in {
       val strUri: String = "//www.example.com/test"
       val url = Url.parse(strUri)
-      val javaUri: URI = url.toJavaURI(config.encoder.default)
+      val javaUri: URI = url.toJavaURI(encoding.default)
       javaUri.getScheme should be(null)
       javaUri.getHost should equal("www.example.com")
       javaUri.getPath should equal("/test")
@@ -33,7 +33,7 @@ class ToUriTests extends WordSpec with Matchers {
     "handle authenticated URL" in {
       val strUri: String = "https://user:password@www.example.com/test"
       val url = Url.parse(strUri)
-      val javaUri: URI = url.toJavaURI(config.encoder.default)
+      val javaUri: URI = url.toJavaURI(encoding.default)
       javaUri.getScheme should equal("https")
       javaUri.getUserInfo should equal("user:password")
       javaUri.getHost should equal("www.example.com")
@@ -48,7 +48,7 @@ class ToUriTests extends WordSpec with Matchers {
         path = "/test",
         query = QueryString.fromPairOptions("weird=&key" -> Some("strange%value"), "arrow" -> Some("⇔"))
       )
-      val javaUri: URI = url.toJavaURI(config.encoder.default)
+      val javaUri: URI = url.toJavaURI(encoding.default)
       javaUri.getScheme should equal("http")
       javaUri.getHost should equal("www.example.com")
       javaUri.getPath should equal("/test")
@@ -68,9 +68,9 @@ class ToUriTests extends WordSpec with Matchers {
       url.hostOption should equal(Some(DomainName("www.example.com")))
       url.user should equal(Some("user"))
       url.password should equal(Some("password"))
-      url.path.render(config.encoder.default) should equal("/test")
+      url.path.render(encoding.default) should equal("/test")
       url.query.params should equal(Vector(("weird=&key", Some("strange%value")), ("arrow", Some("⇔"))))
-      url.render(config.encoder.conservative) should equal(javaUri.toASCIIString)
+      url.render(encoding.conservative) should equal(javaUri.toASCIIString)
     }
   }
 }

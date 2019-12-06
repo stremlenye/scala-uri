@@ -6,7 +6,7 @@ import java.io.ObjectOutputStream
 import java.io.ByteArrayInputStream
 import java.io.ObjectInputStream
 
-import io.lemonlabs.uri.config.UriConfig
+import io.lemonlabs.uri.config.UriDecoderConfig
 import io.lemonlabs.uri.decoding.NoopDecoder
 
 class SerializableTests extends FlatSpec with Matchers {
@@ -26,7 +26,7 @@ class SerializableTests extends FlatSpec with Matchers {
   }
 
   it should "uri can serializable, decoder = NoopDecoder" in {
-    val uri = Uri.parse("http://example.com/path/?key=value#flagment")(UriConfig(decoder = NoopDecoder))
+    val uri = Uri.parse("http://example.com/path/?key=value#flagment")(UriDecoderConfig(decoder = NoopDecoder))
 
     serializeAndDeserialize(uri) should equal(uri)
   }

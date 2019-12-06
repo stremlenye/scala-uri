@@ -1,7 +1,7 @@
 package io.lemonlabs.uri
 
-import io.lemonlabs.uri.config.UriConfig
-import io.lemonlabs.uri.config.encoder.default
+import io.lemonlabs.uri.config.UriDecoderConfig
+import io.lemonlabs.uri.encoding.default
 import io.lemonlabs.uri.decoding.PermissivePercentDecoder
 import io.lemonlabs.uri.parsing.UriParsingException
 import org.scalatest.{FlatSpec, Matchers, OptionValues}
@@ -14,7 +14,7 @@ import org.scalatest.{FlatSpec, Matchers, OptionValues}
 class NapGithubIssueTests extends FlatSpec with Matchers with OptionValues {
   "Github Issue #2" should "now be fixed. Pluses in querystrings should be encoded when using the conservative encoder" in {
     val uri = Url.parse("http://theon.github.com/?+=+")
-    uri.render(config.encoder.conservative) should equal("http://theon.github.com/?%2B=%2B")
+    uri.render(encoding.conservative) should equal("http://theon.github.com/?%2B=%2B")
   }
 
   "Github Issue #4" should "now be fixed. Port numbers should be rendered by toString" in {
@@ -77,7 +77,7 @@ class NapGithubIssueTests extends FlatSpec with Matchers with OptionValues {
 
   "Github Issue #26" should "now be fixed" in {
     val uri = "http://lesswrong.com/index.php?query=abc%yum&john=hello"
-    val conf = UriConfig(decoder = PermissivePercentDecoder)
+    val conf = UriDecoderConfig(decoder = PermissivePercentDecoder)
     val u = Url.parse(uri)(conf)
     u.query.param("query") should equal(Some("abc%yum"))
   }
